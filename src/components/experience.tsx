@@ -1,11 +1,10 @@
-import { OrbitControls } from "@react-three/drei";
+import { Environment, OrbitControls } from "@react-three/drei";
+import { Character } from "./character";
 
 export const Experience = () => (
   <>
     <OrbitControls />
-    <mesh>
-      <boxGeometry />
-      <meshNormalMaterial />
-    </mesh>
+    <Character/>
+    <Environment preset="sunset"/>
   </>
 );
