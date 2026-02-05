@@ -33,11 +33,8 @@ const useChatbot = create<ChatbotState>((set, get) => ({
 
     const lipsyncManager = new Lipsync();
 
-    let lipsyncManagerInitialized = false;
-
     audioPlayer.onplaying = () => {
       lipsyncManager.connectAudio(audioPlayer);
-      lipsyncManagerInitialized = true;
     };
     set({ audioPlayer, lipsyncManager });
   },

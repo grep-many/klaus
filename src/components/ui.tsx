@@ -18,7 +18,7 @@ export const UI = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value.trim());
+    setInput(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

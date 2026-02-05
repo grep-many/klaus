@@ -4,7 +4,7 @@ import { Character } from "./character";
 export const Experience = () => (
   <>
     <OrbitControls />
-    <Character/>
-    <Environment preset="sunset"/>
+    <Character />
+    <Environment preset="sunset" />
   </>
 );
