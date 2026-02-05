@@ -1,8 +1,11 @@
 import { Gltf, useTexture } from "@react-three/drei";
-import { CameraManager, Character } from "@/components";
 import { degToRad } from "three/src/math/MathUtils.js";
-import { SceneGLB, StarPNG } from "@/assets";
 import { AppearanceMode, RenderMode, VFXEmitter, VFXParticles } from "wawa-vfx";
+import { CameraManager } from "./camera-manager";
+import { Character } from "./character";
+import { SceneGLB, StarPNG } from "@/assets";
+
+useTexture.preload(StarPNG);
 
 export const Experience = () => {
   const snowTexture = useTexture(StarPNG);
@@ -10,26 +13,43 @@ export const Experience = () => {
   return (
     <>
       <CameraManager />
+
+      {/* Character */}
       <Character rotation-y={degToRad(10)} scale={0.6} />
+
+      {/* Lights */}
       <directionalLight
-        position={[-3, 3, 10]}
+        position={[-10, 15, 10]}
         intensity={2.5}
-        color={"white"}
+        color="white"
         castShadow
-        shadow-bias={0.005}
-        shadow-mapSize-width={128}
-        shadow-mapSize-height={128}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={0.1}
         shadow-camera-far={50}
-        shadow-camera-top={25}
-        shadow-camera-right={15}
-        shadow-camera-bottom={-25}
-        shadow-camera-left={-15}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
       />
-      <directionalLight position={[3, 3, 10]} intensity={1.2} color={"mediumpurple"} />
-      <directionalLight position={[0, 0, -10]} intensity={9} color={"orange"} />
-      {/* <Environment preset="sunset" environmentIntensity={0.5} /> */}
-      <Gltf rotation-y={degToRad(-20)} position-y={7.72} src={SceneGLB} />
+      <directionalLight position={[3, 3, 10]} intensity={1.2} color="mediumpurple" />
+      <directionalLight position={[0, 0, -10]} intensity={9} color="orange" />
+
+      {/* Shadow receiving plane */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[50, 50]} />
+        <shadowMaterial color="#21282a" opacity={0.5} />
+      </mesh>
+
+      {/* Scene GLB */}
+      <Gltf
+        rotation-y={degToRad(-20)}
+        position-y={7.72}
+        src={SceneGLB}
+        receiveShadow
+      />
+
+      {/* Snow VFX */}
       <VFXParticles
         name="snow"
         settings={{
@@ -63,5 +83,3 @@ export const Experience = () => {
     </>
   );
 };
-
-useTexture.preload(StarPNG);

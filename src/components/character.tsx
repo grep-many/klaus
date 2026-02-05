@@ -1,35 +1,31 @@
-import { KlausGLB } from "@/assets";
-import useChatbot from "@/hooks/use-chatbot";
-import { isSkinnedMesh } from "@/utils/validate-mesh";
-import { useAnimations, useGLTF } from "@react-three/drei";
+import { useGLTF, useAnimations } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import React, { type JSX } from "react";
-import { Mesh, MeshPhysicalMaterial, type Object3D, type SkinnedMesh } from "three";
-import type * as THREE from "three";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Mesh, MeshPhysicalMaterial, Object3D, SkinnedMesh } from "three";
 import { lerp, randInt } from "three/src/math/MathUtils.js";
 import { VISEMES } from "wawa-lipsync";
+import useChatbot from "@/hooks/use-chatbot";
+import { KlausGLB } from "@/assets";
 
-type Props = JSX.IntrinsicElements["group"];
 
-export const Character = ({ ...props }: Props) => {
+export const Character = ({ ...props}) => {
   const { scene, animations } = useGLTF(KlausGLB);
-  const [animation, setAnimation] = React.useState<CharacterAnimationNames>("Idle");
+  const [animation, setAnimation] = useState("Idle");
   const { lipsyncManager, status } = useChatbot();
 
   const { actions, mixer } = useAnimations(animations, scene);
 
-  React.useEffect(() => {
-    scene.traverse((child: THREE.Object3D) => {
+  // --- Setup shadows and materials ---
+  useEffect(() => {
+    scene.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
-        const mesh = child;
+        child.castShadow = true;
+        child.receiveShadow = false; // Character does not need receiveShadow
+        child.frustumCulled = false;
 
-        mesh.castShadow = true;
-        mesh.receiveShadow = false;
-        mesh.frustumCulled = false;
-
-        const oldMaterial = mesh.material;
-
-        const createPhysicalMaterial = (mat: THREE.MeshPhysicalMaterial) =>
+        // Convert all materials to MeshPhysicalMaterial for proper shadowing
+        const oldMaterial = child.material;
+        const createPhysical = (mat: MeshPhysicalMaterial) =>
           new MeshPhysicalMaterial({
             color: mat.color,
             map: mat.map,
@@ -39,58 +35,58 @@ export const Character = ({ ...props }: Props) => {
             iridescence: 0.7,
             iridescenceIOR: 1.3,
             reflectivity: 1,
+            transparent: false,
+            opacity: 1,
           });
 
         if (Array.isArray(oldMaterial)) {
-          mesh.material = oldMaterial.map((mat) =>
-            createPhysicalMaterial(mat as MeshPhysicalMaterial),
-          );
+          child.material = oldMaterial.map((mat) => createPhysical(mat as MeshPhysicalMaterial));
         } else {
-          mesh.material = createPhysicalMaterial(oldMaterial as MeshPhysicalMaterial);
+          child.material = createPhysical(oldMaterial as MeshPhysicalMaterial);
         }
       }
     });
   }, [scene]);
 
-  const avatarSkinMesh = React.useMemo(() => {
+  // --- Skinned meshes for lip sync ---
+  const avatarSkinnedMeshes = useMemo(() => {
     const meshes: SkinnedMesh[] = [];
-    scene.traverse((child: Object3D) => {
-      if (isSkinnedMesh(child)) {
-        meshes.push(child);
-      }
+    scene.traverse((child) => {
+      if ((child as SkinnedMesh).isSkinnedMesh) meshes.push(child as SkinnedMesh);
     });
     return meshes;
   }, [scene]);
 
-  const lerpMorphTarget = React.useCallback(
-    (target: VISEMES, value: number, speed = 0.1) => {
-      avatarSkinMesh.forEach((mesh) => {
+  const lerpMorphTarget = useCallback(
+    (target: VISEMES, value:number, speed = 0.1) => {
+      avatarSkinnedMeshes.forEach((mesh) => {
         if (!mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return;
         const morphIndex = mesh.morphTargetDictionary[target];
-        if (!morphIndex) return;
-        const current = mesh.morphTargetInfluences[morphIndex];
-        mesh.morphTargetInfluences[morphIndex] = lerp(current, value, speed);
+        if (morphIndex !== undefined) {
+          mesh.morphTargetInfluences[morphIndex] = lerp(
+            mesh.morphTargetInfluences[morphIndex],
+            value,
+            speed,
+          );
+        }
       });
     },
-    [avatarSkinMesh],
+    [avatarSkinnedMeshes],
   );
 
   useFrame(() => {
     if (!lipsyncManager) return;
     lipsyncManager.processAudio();
-    const current = lipsyncManager.viseme;
-
+    const currentViseme = lipsyncManager.viseme;
     Object.values(VISEMES).forEach((viseme) =>
-      lerpMorphTarget(viseme, viseme === current ? 1 : 0, 0.1),
+      lerpMorphTarget(viseme, viseme === currentViseme ? 1 : 0, 0.1),
     );
   });
 
-  const characterActions = actions as CharacterAnimations;
-
-  React.useEffect(() => {
-    let nextAnimation: CharacterAnimationNames;
-    // const talkingAnimations= ["Talking", "Talking 2", "Talking 3"] as const;
-    const talkingAnimations: CharacterTalkingAnimations = ["Talking", "Talking 2 ", "Talking 3"];
+  // --- Animation switching ---
+  useEffect(() => {
+    let nextAnimation: string;
+    const talkingAnimations = ["Talking", "Talking 2 ", "Talking 3"];
     switch (status) {
       case "loading":
         nextAnimation = "Thinking";
@@ -101,32 +97,24 @@ export const Character = ({ ...props }: Props) => {
       case "playing":
         nextAnimation = talkingAnimations[randInt(0, talkingAnimations.length - 1)];
         break;
-
       default:
         nextAnimation = "Idle";
-        break;
     }
     setAnimation(nextAnimation);
   }, [status]);
 
-  React.useEffect(() => {
-    const characterAnimation: CharacterAnimations[CharacterAnimationNames] =
-      characterActions[animation];
-    if (!characterAnimation) return;
+  useEffect(() => {
+    const action = actions[animation];
+    if (!action) return;
     if (mixer.time < 0.01) {
-      characterAnimation.reset().play();
+      action.reset().play();
     } else {
-      characterAnimation.reset().fadeIn(0.5).play();
+      action.reset().fadeIn(0.5).play();
     }
-
     return () => {
-      characterAnimation.fadeOut(0.5);
+      action.fadeOut(0.5);
     };
-  }, [characterActions, animation]);
-
-  React.useEffect(() => {
-    characterActions["Idle"].play();
-  }, [characterActions]);
+  }, [animation, actions, mixer]);
 
   return (
     <group {...props}>
