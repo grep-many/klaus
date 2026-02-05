@@ -55,7 +55,7 @@ export const Character = ({ ...props }: Props) => {
   React.useEffect(() => {
     let nextAnimation: CharacterAnimationNames;
     // const talkingAnimations= ["Talking", "Talking 2", "Talking 3"] as const;
-    const talkingAnimations: CharacterTalkingAnimations = ["Talking", "Talking 2", "Talking 3"];
+    const talkingAnimations: CharacterTalkingAnimations = ["Talking", "Talking 2 ", "Talking 3"];
     switch (status) {
       case "loading":
         nextAnimation = "Thinking";
@@ -77,6 +77,7 @@ export const Character = ({ ...props }: Props) => {
   React.useEffect(() => {
     const characterAnimation: CharacterAnimations[CharacterAnimationNames] =
       characterActions[animation];
+    if (!characterAnimation) return;
     if (mixer.time < 0.01) {
       characterAnimation.reset().play();
     } else {
