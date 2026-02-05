@@ -5,17 +5,17 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import React, { type JSX } from "react";
 import type { Object3D, SkinnedMesh } from "three";
-import { lerp } from "three/src/math/MathUtils.js";
+import { lerp, randInt } from "three/src/math/MathUtils.js";
 import { VISEMES } from "wawa-lipsync";
 
 type Props = JSX.IntrinsicElements["group"];
 
 export const Character = ({ ...props }: Props) => {
   const { scene, animations } = useGLTF(KlausGLB);
+  const [animation, setAnimation] = React.useState<CharacterAnimationNames>("Idle");
+  const { lipsyncManager, status } = useChatbot();
 
-  const lipsyncManager = useChatbot((state) => state.lipsyncManager);
-
-  const { actions } = useAnimations(animations, scene);
+  const { actions, mixer } = useAnimations(animations, scene);
 
   const avatarSkinMesh = React.useMemo(() => {
     const meshes: SkinnedMesh[] = [];
@@ -51,6 +51,42 @@ export const Character = ({ ...props }: Props) => {
   });
 
   const characterActions = actions as CharacterAnimations;
+
+  React.useEffect(() => {
+    let nextAnimation: CharacterAnimationNames;
+    // const talkingAnimations= ["Talking", "Talking 2", "Talking 3"] as const;
+    const talkingAnimations: CharacterTalkingAnimations = ["Talking", "Talking 2", "Talking 3"];
+    switch (status) {
+      case "loading":
+        nextAnimation = "Thinking";
+        break;
+      case "idle":
+        nextAnimation = "Idle";
+        break;
+      case "playing":
+        nextAnimation = talkingAnimations[randInt(0, talkingAnimations.length - 1)];
+        break;
+
+      default:
+        nextAnimation = "Idle";
+        break;
+    }
+    setAnimation(nextAnimation);
+  }, [status]);
+
+  React.useEffect(() => {
+    const characterAnimation: CharacterAnimations[CharacterAnimationNames] =
+      characterActions[animation];
+    if (mixer.time < 0.01) {
+      characterAnimation.reset().play();
+    } else {
+      characterAnimation.reset().fadeIn(0.5).play();
+    }
+
+    return () => {
+      characterAnimation.fadeOut(0.5);
+    };
+  }, [characterActions, animation]);
 
   React.useEffect(() => {
     characterActions["Idle"].play();
