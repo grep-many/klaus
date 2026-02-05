@@ -4,7 +4,8 @@ import { isSkinnedMesh } from "@/utils/validate-mesh";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import React, { type JSX } from "react";
-import type { Object3D, SkinnedMesh } from "three";
+import { Mesh, MeshPhysicalMaterial, type Object3D, type SkinnedMesh } from "three";
+import type * as THREE from "three";
 import { lerp, randInt } from "three/src/math/MathUtils.js";
 import { VISEMES } from "wawa-lipsync";
 
@@ -16,6 +17,40 @@ export const Character = ({ ...props }: Props) => {
   const { lipsyncManager, status } = useChatbot();
 
   const { actions, mixer } = useAnimations(animations, scene);
+
+  React.useEffect(() => {
+    scene.traverse((child: THREE.Object3D) => {
+      if (child instanceof Mesh) {
+        const mesh = child;
+
+        mesh.castShadow = true;
+        mesh.receiveShadow = false;
+        mesh.frustumCulled = false;
+
+        const oldMaterial = mesh.material;
+
+        const createPhysicalMaterial = (mat: THREE.MeshPhysicalMaterial) =>
+          new MeshPhysicalMaterial({
+            color: mat.color,
+            map: mat.map,
+            normalMap: mat.normalMap,
+            roughness: 1,
+            ior: 2.2,
+            iridescence: 0.7,
+            iridescenceIOR: 1.3,
+            reflectivity: 1,
+          });
+
+        if (Array.isArray(oldMaterial)) {
+          mesh.material = oldMaterial.map((mat) =>
+            createPhysicalMaterial(mat as MeshPhysicalMaterial),
+          );
+        } else {
+          mesh.material = createPhysicalMaterial(oldMaterial as MeshPhysicalMaterial);
+        }
+      }
+    });
+  }, [scene]);
 
   const avatarSkinMesh = React.useMemo(() => {
     const meshes: SkinnedMesh[] = [];

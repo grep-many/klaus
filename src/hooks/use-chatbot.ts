@@ -43,11 +43,11 @@ const useChatbot = create<ChatbotState>((set, get) => ({
 
   sendMessage: async (message) => {
     let reply: string;
+    set((state) => ({
+      messages: [...recentData(2, state.messages), { text: message, sender: "user" }],
+      status: "loading",
+    }));
     try {
-      set((state) => ({
-        messages: [...recentData(2, state.messages), { text: message, sender: "user" }],
-        status: "loading",
-      }));
 
       const res = await fetch(`${chatApi}${encodeURIComponent(message)}`);
       const data = await res.json(); // or res.text() depending on your API

@@ -18,10 +18,13 @@ export const UI = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (status === "loading" || status === "playing") return;
+
     setInput(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (status === "loading" || status === "playing") return;
     if (e.key !== "Enter" || e.shiftKey) return setInput(input + "\n");
     e.preventDefault();
     handleSend();
@@ -147,7 +150,7 @@ export const UI = () => {
               />
               <button
                 onClick={handleSend}
-                disabled={status === "loading"}
+                disabled={status === "loading" || status === "playing"}
                 className="absolute top-1/2 right-2 -translate-y-1/2 p-2 text-white/70 transition-colors hover:text-white disabled:opacity-50"
               >
                 <IoSend className="h-5 w-5" />
