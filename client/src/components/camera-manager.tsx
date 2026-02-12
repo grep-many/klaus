@@ -1,7 +1,7 @@
 import { CameraControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { degToRad, MathUtils } from "three/src/math/MathUtils.js";
+import { degToRad } from "three/src/math/MathUtils.js";
 import useChatbot from "../hooks/use-chatbot";
 
 export const CameraManager = () => {
@@ -42,22 +42,17 @@ export const CameraManager = () => {
     }
   }, [controls, status]);
 
-  useFrame((state, delta) => {
-    const lockedDelta = Math.max(Math.min(delta, 0.5), 0); // Prevent jump when resuming from tab switch
+  useFrame((state) => {
     const t = state.clock.elapsedTime;
-    if (locked.current) return;
-    if (!controls) return;
-    controls.polarAngle = MathUtils.lerp(
-      controls.polarAngle,
-      Math.PI / 2 + Math.sin(t / 3) * degToRad(3),
-      lockedDelta,
-    );
-    controls.azimuthAngle = MathUtils.lerp(
-      controls.azimuthAngle,
-      Math.cos(t / 4) * degToRad(8),
-      lockedDelta,
-    );
+    if (locked.current || !controls) return;
+
+    const targetPolar = Math.PI / 2 + Math.sin(t / 3) * degToRad(3);
+    const targetAzimuth = Math.cos(t / 4) * degToRad(8);
+
+    // Use rotateTo instead of direct assignment
+    controls.rotateTo(targetAzimuth, targetPolar, true); // true = smooth transition
   });
+  
 
   return (
     <CameraControls

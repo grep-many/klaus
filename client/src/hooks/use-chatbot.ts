@@ -3,6 +3,22 @@ import { recentData } from "@/utils/recent-data";
 import { Lipsync } from "wawa-lipsync";
 import { create } from "zustand";
 
+type Message = {
+  text: string;
+  sender: "user" | "klaus";
+};
+
+type ChatbotState = {
+  audioPlayer: HTMLAudioElement | null;
+  lipsyncManager: Lipsync | null;
+  status: "loading" | "idle"|"playing";
+  setupAudioPlayer: () => void;
+  playAudio: (url: string) => void;
+  messages: Message[];
+  sendMessage: (message: string) => void;
+  loaded: boolean;
+};
+
 const useChatbot = create<ChatbotState>((set, get) => ({
   audioPlayer: null,
   lipsyncManager: null,

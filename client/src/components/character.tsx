@@ -1,14 +1,13 @@
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 import { Mesh, MeshPhysicalMaterial, Object3D, SkinnedMesh } from "three";
 import { lerp, randInt } from "three/src/math/MathUtils.js";
 import { VISEMES } from "wawa-lipsync";
 import useChatbot from "@/hooks/use-chatbot";
 import { KlausGLB } from "@/assets";
 
-
-export const Character = ({ ...props}) => {
+export const Character = ({ ...props }: JSX.IntrinsicElements["group"]) => {
   const { scene, animations } = useGLTF(KlausGLB);
   const [animation, setAnimation] = useState("Idle");
   const { lipsyncManager, status } = useChatbot();
@@ -58,7 +57,7 @@ export const Character = ({ ...props}) => {
   }, [scene]);
 
   const lerpMorphTarget = useCallback(
-    (target: VISEMES, value:number, speed = 0.1) => {
+    (target: VISEMES, value: number, speed = 0.1) => {
       avatarSkinnedMeshes.forEach((mesh) => {
         if (!mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return;
         const morphIndex = mesh.morphTargetDictionary[target];
@@ -85,22 +84,26 @@ export const Character = ({ ...props}) => {
 
   // --- Animation switching ---
   useEffect(() => {
-    let nextAnimation: string;
-    const talkingAnimations = ["Talking", "Talking 2 ", "Talking 3"];
-    switch (status) {
-      case "loading":
-        nextAnimation = "Thinking";
-        break;
-      case "idle":
-        nextAnimation = "Idle";
-        break;
-      case "playing":
-        nextAnimation = talkingAnimations[randInt(0, talkingAnimations.length - 1)];
-        break;
-      default:
-        nextAnimation = "Idle";
-    }
-    setAnimation(nextAnimation);
+    const id = setTimeout(() => {
+      let nextAnimation: string;
+      const talkingAnimations = ["Talking", "Talking 2 ", "Talking 3"];
+      switch (status) {
+        case "loading":
+          nextAnimation = "Thinking";
+          break;
+        case "idle":
+          nextAnimation = "Idle";
+          break;
+        case "playing":
+          nextAnimation = talkingAnimations[randInt(0, talkingAnimations.length - 1)];
+          break;
+        default:
+          nextAnimation = "Idle";
+      }
+      setAnimation(nextAnimation);
+    }, 0);
+
+    return () => clearTimeout(id);
   }, [status]);
 
   useEffect(() => {
