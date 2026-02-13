@@ -6,7 +6,7 @@ interface ChatHistory {
   content: string;
 }
 
-class AIService {
+class AIController {
   private history: ChatHistory[] = [];
   private readonly MAX_HISTORY = 6;
 
@@ -66,4 +66,4 @@ Klaus:`;
   }
 }
 
-export const aiService = new AIService();
+export const aiController = new AIController();

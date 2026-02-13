@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { aiService } from "../services/ai.service";
+import { aiController } from "../controller/ai.controller";
 
 class AIRouter {
   public router = Router();
@@ -21,7 +21,7 @@ class AIRouter {
     }
 
     try {
-      const reply = await aiService.getChatResponse(userMessage);
+      const reply = await aiController.getChatResponse(userMessage);
 
       // Matches your frontend's 'reply = data.response' logic
       return res.json({ response: reply });
