@@ -11,7 +11,11 @@ class AIController {
   private readonly MAX_HISTORY = 6;
 
   private get baseUrl() {
-    return process.env.LLAMA_API_URL ;
+    return process.env.LLAMA_API_URL;
+  }
+
+  private get apiKey() {
+    return process.env.LLAMA_API_KEY;
   }
 
   private readonly SANTA_GRAMMAR = `root ::= [a-zA-Z0-9\\s\\.\\,\\!\\?\\']{1,150}`;
@@ -33,13 +37,22 @@ User: ${userMessage}
 Klaus:`;
 
     try {
-      const { data } = await axios.post(this.baseUrl, {
-        prompt: prompt,
-        temperature: 0.6,
-        stop: ["\n", "User:", "Klaus:", "(", "*"],
-        grammar: this.SANTA_GRAMMAR,
-        n_predict: 100,
-      });
+      const { data } = await axios.post(
+        this.baseUrl,
+        {
+          prompt: prompt,
+          temperature: 0.6,
+          stop: ["\n", "User:", "Klaus:", "(", "*"],
+          grammar: this.SANTA_GRAMMAR,
+          n_predict: 100,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
       let reply = data.content.trim();
 

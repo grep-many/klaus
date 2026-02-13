@@ -52,7 +52,6 @@ export const CameraManager = () => {
     // Use rotateTo instead of direct assignment
     controls.rotateTo(targetAzimuth, targetPolar, true); // true = smooth transition
   });
-  
 
   return (
     <CameraControls

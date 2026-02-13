@@ -24,7 +24,7 @@ class AIRouter {
       const reply = await aiController.getChatResponse(userMessage);
 
       // Matches your frontend's 'reply = data.response' logic
-      return res.json({ response: reply });
+      return res.json({ response: reply?.split("#")[0] });
     } catch (err: any) {
       return res.status(500).json({ response: "Ho ho ho! Something went wrong!" });
     }

@@ -5,12 +5,15 @@ import dotenv from "dotenv";
 import ttsRoute from "./routes/tts.route";
 
 dotenv.config({
-  // quiet: true,
+  quiet: true,
   path: ".env.local",
 });
 
 class Server {
   public app: Application;
+  public get port() {
+    return Number(process.env.PORT) || 8000;
+  }
 
   constructor() {
     this.app = express();

@@ -11,7 +11,7 @@ type Message = {
 type ChatbotState = {
   audioPlayer: HTMLAudioElement | null;
   lipsyncManager: Lipsync | null;
-  status: "loading" | "idle"|"playing";
+  status: "loading" | "idle" | "playing";
   setupAudioPlayer: () => void;
   playAudio: (url: string) => void;
   messages: Message[];
@@ -48,13 +48,52 @@ const useChatbot = create<ChatbotState>((set, get) => ({
     audioPlayer.onended = () => set({ status: "idle" });
     set({ audioPlayer, lipsyncManager });
   },
-  playAudio: (url?: string) => {
-    const audioPlayer = get().audioPlayer;
-    if (!audioPlayer) return console.warn("Audio Player is not ready!");
 
-    // Use fallback if URL missing or empty
-    audioPlayer.src = url?.trim() ? url : FallbackMP3;
-    audioPlayer.play().catch((err) => console.error("Play failed:", err));
+  playAudio: async (url: string) => {
+    const { lipsyncManager, audioPlayer } = get();
+    if (!lipsyncManager || !audioPlayer) return;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.arrayBuffer();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(data);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+
+      // Adjust speed and pitch for Klaus
+      source.playbackRate.value = 1.3;
+      source.detune.value = -1000;
+
+      const destination = audioContext.createMediaStreamDestination();
+
+      // --- CRITICAL CHANGE ---
+      // Remove: source.connect(audioContext.destination);
+      // We ONLY connect to the destination stream to avoid "double voice"
+      source.connect(destination);
+
+      audioPlayer.srcObject = destination.stream;
+
+      // Ensure lipsync is watching the player
+      lipsyncManager.connectAudio(audioPlayer);
+
+      source.start(0);
+
+      // The audioPlayer is now the only thing outputting sound to speakers
+      await audioPlayer.play();
+
+      set({ status: "playing" });
+
+      source.onended = () => {
+        set({ status: "idle" });
+        audioPlayer.srcObject = null;
+        audioContext.close();
+      };
+    } catch (err) {
+      console.error("Klaus Playback Error:", err);
+      set({ status: "idle" });
+    }
   },
 
   sendMessage: async (message) => {
@@ -64,7 +103,6 @@ const useChatbot = create<ChatbotState>((set, get) => ({
       status: "loading",
     }));
     try {
-
       const res = await fetch(`${chatApi}${encodeURIComponent(message)}`);
       const data = await res.json(); // or res.text() depending on your API
       reply = data.response;

@@ -42,12 +42,7 @@ export const Experience = () => {
       </mesh>
 
       {/* Scene GLB */}
-      <Gltf
-        rotation-y={degToRad(-20)}
-        position-y={7.72}
-        src={SceneGLB}
-        receiveShadow
-      />
+      <Gltf rotation-y={degToRad(-20)} position-y={7.72} src={SceneGLB} receiveShadow />
 
       {/* Snow VFX */}
       <VFXParticles

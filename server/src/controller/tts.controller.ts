@@ -1,6 +1,6 @@
-// tts.controller.ts
 import { Request, Response } from "express";
 import * as googleTTS from "google-tts-api";
+import axios from "axios";
 
 class TTSController {
   public async getVoice(req: Request, res: Response) {
@@ -11,10 +11,23 @@ class TTSController {
         slow: false,
         host: "https://translate.google.com",
       });
-      // Redirect to the Google URL or fetch and pipe it
-      res.redirect(url);
+
+      // Instead of res.redirect, we fetch the audio and stream it
+      const response = await axios({
+        method: "get",
+        url: url,
+        responseType: "stream",
+      });
+
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Transfer-Encoding": "chunked",
+      });
+
+      response.data.pipe(res);
     } catch (error) {
-      res.status(500).json({ error: "Failed to get voice" });
+      console.error("TTS Proxy Error:", error);
+      res.status(500).json({ error: "Failed to fetch audio from Google" });
     }
   }
 }
