@@ -21,6 +21,7 @@ jobs:
       VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
       VITE_CHAT_API_URL: ${{ secrets.VITE_CHAT_API_URL }}
       VITE_TTS_API_URL: ${{ secrets.VITE_TTS_API_URL }}
+      VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
     defaults:
       run:
         working-directory: client
@@ -60,6 +61,7 @@ jobs:
             VITE_BASE_PATH
             VITE_CHAT_API_URL
             VITE_TTS_API_URL
+            VITE_API_KEY
           )
 
           for VAR in "${REQUIRED_VARS[@]}"; do

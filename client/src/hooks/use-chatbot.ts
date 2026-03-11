@@ -1,4 +1,4 @@
-import { chatApi, FallbackMP3, ttsApi } from "@/assets";
+import { apiKey, chatApi, FallbackMP3, ttsApi } from "@/assets";
 import { recentData } from "@/utils/recent-data";
 import { Lipsync } from "wawa-lipsync";
 import { create } from "zustand";
@@ -18,6 +18,8 @@ type ChatbotState = {
   sendMessage: (message: string) => void;
   loaded: boolean;
 };
+
+const requestInit = apiKey ? { headers: { "X-API-Key": apiKey } } : undefined;
 
 const useChatbot = create<ChatbotState>((set, get) => ({
   audioPlayer: null,
@@ -54,7 +56,7 @@ const useChatbot = create<ChatbotState>((set, get) => ({
     if (!lipsyncManager || !audioPlayer) return;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, requestInit);
       const data = await response.arrayBuffer();
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = await audioContext.decodeAudioData(data);
@@ -103,7 +105,7 @@ const useChatbot = create<ChatbotState>((set, get) => ({
       status: "loading",
     }));
     try {
-      const res = await fetch(`${chatApi}${encodeURIComponent(message)}`);
+      const res = await fetch(`${chatApi}${encodeURIComponent(message)}`, requestInit);
       const data = await res.json(); // or res.text() depending on your API
       reply = data.response;
 

@@ -8,6 +8,7 @@ declare module "*.glb" {
 interface ImportMetaEnv {
   readonly VITE_CHAT_API_URL: string;
   readonly VITE_TTS_API_URL: string;
+  readonly VITE_API_KEY?: string;
 }
 
 interface ImportMeta {
