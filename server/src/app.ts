@@ -15,6 +15,10 @@ class Server {
     return Number(process.env.PORT) || 8000;
   }
 
+  private get clientUrl(): string {
+    return process.env.CLIENT_URL || "*";
+  }
+
   constructor() {
     this.app = express();
     this.config();
@@ -22,7 +26,7 @@ class Server {
   }
 
   private config(): void {
-    this.app.use(cors());
+    this.app.use(cors({ origin: this.clientUrl }));
     this.app.use(express.json());
   }
   private routes(): void {
