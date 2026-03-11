@@ -16,7 +16,14 @@ class Server {
   }
 
   private get clientUrl(): string {
-    return process.env.CLIENT_URL || "*";
+    return process.env.CLIENT_URL ?? "";
+  }
+
+  private get allowedOrigins(): string[] {
+    return this.clientUrl
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
   }
 
   constructor() {
@@ -26,7 +33,20 @@ class Server {
   }
 
   private config(): void {
-    this.app.use(cors({ origin: this.clientUrl }));
+    const isProd = process.env.NODE_ENV !== "development";
+    const allowAll = !isProd;
+    const origins = this.allowedOrigins;
+
+    this.app.use(
+      cors({
+        origin: (origin, callback) => {
+          if (allowAll) return callback(null, true);
+          if (!origin) return callback(null, false);
+          if (origins.includes(origin)) return callback(null, true);
+          return callback(new Error("CORS: Origin not allowed"));
+        },
+      }),
+    );
     this.app.use(express.json());
   }
   private routes(): void {
